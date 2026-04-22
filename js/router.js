@@ -33,7 +33,26 @@ function RenderAboutPage() {
 }
 
 function RenderContactPage() {
-    document.querySelector('main').innerHTML = `<h1>Contact</h1><form>...</form>`;
+    document.querySelector('main').innerHTML = `
+        <h1>Contact</h1>
+        <form id="contact-form" style="display: flex; flex-direction: column; max-width: 400px; gap: 10px;">
+            <input type="text" id="name" placeholder="Twoje imię" required>
+            <input type="email" id="email" placeholder="Twój e-mail" required>
+            <textarea id="message" placeholder="Wiadomość" rows="5" required></textarea>
+            
+            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+            
+            <button type="submit">Wyślij</button>
+            <p id="form-status"></p>
+        </form>
+    `;
+
+    // Inicjalizacja reCAPTCHA (jeśli skrypt jest już załadowany)
+    if (window.grecaptcha) {
+        grecaptcha.render(document.querySelector('.g-recaptcha'));
+    }
+
+    setupContactValidation();
 }
 
 function RenderGalleryPage() {
@@ -148,3 +167,50 @@ document.querySelector('#theme-toggle').addEventListener('click', () => {
     // This toggles a "dark-mode" class on the body tag
     document.body.classList.toggle('dark-mode');
 });
+
+function setupContactValidation() {
+    const form = document.getElementById('contact-form');
+    const status = document.getElementById('form-status');
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const message = document.getElementById('message').value.trim();
+        const captchaResponse = grecaptcha.getResponse();
+
+        // 1. Walidacja pól tekstowych
+        if (name.length < 3) {
+            status.innerText = "Imię jest za krótkie.";
+            status.style.color = "red";
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            status.innerText = "Wprowadź poprawny adres e-mail.";
+            status.style.color = "red";
+            return;
+        }
+
+        // 2. Walidacja reCAPTCHA
+        if (captchaResponse.length === 0) {
+            status.innerText = "Proszę potwierdzić, że nie jesteś robotem.";
+            status.style.color = "red";
+            return;
+        }
+
+        // 3. Symulacja wysyłki
+        status.innerText = "Wysyłanie...";
+        status.style.color = "blue";
+
+        // Tutaj normalnie byłby fetch do backendu
+        setTimeout(() => {
+            status.innerText = "Wiadomość wysłana pomyślnie!";
+            status.style.color = "green";
+            form.reset();
+            grecaptcha.reset();
+        }, 1500);
+    });
+}
